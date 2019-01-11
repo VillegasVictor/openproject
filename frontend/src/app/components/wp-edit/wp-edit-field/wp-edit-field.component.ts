@@ -55,7 +55,6 @@ import {NotificationsService} from 'core-app/modules/common/notifications/notifi
 import {I18nService} from 'core-app/modules/common/i18n/i18n.service';
 import {IFieldSchema} from "core-app/modules/fields/field.base";
 import {ClickPositionMapper} from "core-app/modules/common/set-click-position/set-click-position";
-import {IWorkPackageEditingServiceToken} from "../../wp-edit-form/work-package-editing.service.interface";
 
 @Component({
   selector: 'wp-edit-field',
@@ -87,7 +86,7 @@ export class WorkPackageEditFieldComponent implements OnInit, OnDestroy {
               protected wpNotificationsService:WorkPackageNotificationService,
               protected ConfigurationService:ConfigurationService,
               protected opContextMenu:OPContextMenuService,
-              @Inject(IWorkPackageEditingServiceToken) protected wpEditing:WorkPackageEditingService,
+              protected wpEditing:WorkPackageEditingService,
               protected wpCacheService:WorkPackageCacheService,
               // Get parent field group from injector
               protected wpEditFieldGroup:WorkPackageEditFieldGroupComponent,

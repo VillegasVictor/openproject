@@ -34,7 +34,6 @@ import {WorkPackageNotificationService} from 'core-components/wp-edit/wp-notific
 import {HalResourceService} from 'core-app/modules/hal/services/hal-resource.service';
 import {CustomActionResource} from 'core-app/modules/hal/resources/custom-action-resource';
 import {WorkPackagesActivityService} from 'core-components/wp-single-view-tabs/activity-panel/wp-activity.service';
-import {IWorkPackageEditingServiceToken} from "core-components/wp-edit-form/work-package-editing.service.interface";
 import {WorkPackageEditingService} from "core-components/wp-edit-form/work-package-editing-service";
 import {SchemaCacheService} from "core-components/schemas/schema-cache.service";
 
@@ -52,7 +51,7 @@ export class WpCustomActionComponent {
               private wpSchemaCacheService:SchemaCacheService,
               private wpActivity:WorkPackagesActivityService,
               private wpNotificationsService:WorkPackageNotificationService,
-              @Inject(IWorkPackageEditingServiceToken) protected wpEditing:WorkPackageEditingService) {}
+              private wpEditing:WorkPackageEditingService) {}
 
   private fetchAction() {
     this.halResourceService.get<CustomActionResource>(this.action.href!)

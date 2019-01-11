@@ -161,7 +161,7 @@ export class UserActivityComponent extends WorkPackageCommentFieldHandler implem
   }
 
   public handleUserSubmit() {
-    if (this.changeset.inFlight || !this.rawComment) {
+    if (this.inFlight || !this.rawComment) {
       return Promise.resolve();
     }
     return this.updateComment();
@@ -172,6 +172,8 @@ export class UserActivityComponent extends WorkPackageCommentFieldHandler implem
   }
 
   public async updateComment() {
+    this.inFlight = true;
+
     await this.onSubmit();
     return this.commentService.updateComment(this.activity, this.rawComment || '')
       .then((newActivity:HalResource) => {
@@ -180,7 +182,8 @@ export class UserActivityComponent extends WorkPackageCommentFieldHandler implem
         this.wpLinkedActivities.require(this.workPackage, true);
         this.wpCacheService.updateWorkPackage(this.workPackage);
         this.deactivate(true);
-      });
+      })
+      .catch(() => this.deactivate(true));
   }
 
   public focusEditIcon() {

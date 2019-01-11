@@ -1,30 +1,69 @@
 import {SchemaResource} from "core-app/modules/hal/resources/schema-resource";
 import {FormResource} from "core-app/modules/hal/resources/form-resource";
 import {HalResource} from "core-app/modules/hal/resources/hal-resource";
-import {Injector} from '@angular/core';
+import {ChangeMap, ChangeSet} from "core-components/wp-edit/changeset";
 
 export abstract class EditChangeset<T extends HalResource|{ [key:string]:unknown; }> {
-  // The changeset to be applied to the resource
-  public changes:{ [attribute:string]:any } = {};
+  /** Maintain a single change set while editing */
+  protected changeset = new ChangeSet();
+
+  /** The projected resource, which will proxy values from the change set */
+  public projectedResource = new Proxy(
+    this.pristineResource,
+    {
+      get: (_, key:string) => this.proxyGet(key),
+      set: (_, key:string, val:any) => {
+        this.setValue(key, val);
+        return true;
+      },
+    }
+  );
 
   public form:FormResource|null;
 
-  constructor(readonly injector:Injector,
-              public resource:T,
-              form?:FormResource) {
+  constructor(public pristineResource:T, form?:FormResource) {
     this.form = form || null;
   }
 
-  public get empty() {
-    return _.isEmpty(this.changes);
+  /**
+   * Return whether no changes were made to the work package
+   */
+  public isEmpty() {
+    return this.changeset.changed.length === 0;
   }
 
   /**
-   * Get attributes
-   * @returns {string[]}
+   * Return a shallow copy of the changes
    */
-  public get changedAttributes() {
-    return _.keys(this.changes);
+  public get changes():ChangeMap {
+    return { ...this.changeset.all };
+  }
+
+  /**
+   * Return the changed attributes in this change;
+   */
+  public get changedAttributes():string[] {
+    return this.changeset.changed;
+  }
+
+  /**
+   * Returns whether the given attribute was changed
+   */
+  public contains(key:string) {
+    return this.changeset.contains(key);
+  }
+
+  /**
+   * Proxy getters to base or changeset.
+   * Special case for schema , which is overridden.
+   * @param key
+   */
+  private proxyGet(key:string) {
+    if (key === 'schema') {
+      return this.schema;
+    }
+
+    return this.value(key);
   }
 
   /**
@@ -37,7 +76,7 @@ export abstract class EditChangeset<T extends HalResource|{ [key:string]:unknown
     if (this.isOverridden(key)) {
       return this.changes[key];
     } else {
-      return this.resource[key];
+      return this.pristineResource[key];
     }
   }
 
@@ -50,7 +89,16 @@ export abstract class EditChangeset<T extends HalResource|{ [key:string]:unknown
   }
 
   public clear() {
-   this.changes = {};
+   this.changeset.clear();
+   this.form = null;
+  }
+
+  /**
+   * Reset the given changed attribute
+   * @param key
+   */
+  public reset(key:string) {
+    this.changeset.reset(key);
   }
 
   /**
@@ -68,6 +116,6 @@ export abstract class EditChangeset<T extends HalResource|{ [key:string]:unknown
    * and contains available values.
    */
   public get schema():SchemaResource {
-    return (this.form || this.resource).schema;
+    return (this.form || this.pristineResource).schema;
   }
 }
