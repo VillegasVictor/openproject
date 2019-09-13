@@ -100,6 +100,14 @@ describe Projects::UpdateService, type: :model do
         .to eql project
     end
 
+    it 'sends an update notification' do
+      expect(OpenProject::Notifications)
+        .to receive(:send)
+        .with('project_updated', project: project)
+
+      subject
+    end
+
     context 'if the identifier is altered' do
       let(:call_attributes) { { identifier: 'Some identifier' } }
 
@@ -110,6 +118,9 @@ describe Projects::UpdateService, type: :model do
       end
 
       it 'sends the notification' do
+        expect(OpenProject::Notifications)
+          .to receive(:send)
+          .with('project_updated', project: project)
         expect(OpenProject::Notifications)
           .to receive(:send)
           .with('project_renamed', project: project)

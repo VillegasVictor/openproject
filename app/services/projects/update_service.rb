@@ -35,6 +35,7 @@ module Projects
     def after_save
       touch_on_custom_values_update
       notify_on_identifier_renamed
+      send_update_notification
     end
 
     def touch_on_custom_values_update
@@ -45,6 +46,10 @@ module Projects
       return unless model.saved_change_to_identifier?
 
       OpenProject::Notifications.send('project_renamed', project: model)
+    end
+
+    def send_update_notification
+      OpenProject::Notifications.send('project_updated', project: model)
     end
 
     def only_custom_values_updated?

@@ -69,7 +69,12 @@ class ProjectsController < ApplicationController
 
   def new
     assign_default_create_variables
+
     @project = Project.new
+
+    Projects::SetAttributesService
+      .new(user: current_user, model: @project, contract_class: Projects::CreateContract)
+      .call(permitted_params.project)
 
     render layout: 'no_menu'
   end
@@ -81,8 +86,13 @@ class ProjectsController < ApplicationController
   def create
     assign_default_create_variables
 
-    if validate_parent_id && @project.save
-      @project.set_allowed_parent!(params['project']['parent_id']) if params['project'].has_key?('parent_id')
+    call_result = Projects::CreateService
+                  .new(user: current_user)
+                  .call(permitted_params.project)
+
+    if call_result.success?
+      @project = call_result.result
+
       add_current_user_to_project_if_not_admin(@project)
       respond_to do |format|
         format.html do
@@ -100,18 +110,13 @@ class ProjectsController < ApplicationController
   def update
     @altered_project = Project.find(@project.id)
 
-    # TODO: move the validation into the contract
-    #       move setting the allowed parents to the service
-    service = Projects::UpdateService
-              .new(user: current_user,
-                   model: @altered_project)
+    service_call = Projects::UpdateService
+                   .new(user: current_user,
+                        model: @altered_project)
+                   .call(permitted_params.project)
 
-    if validate_parent_id && service.call(permitted_params.project).success?
-      if params['project'].has_key?('parent_id')
-        @altered_project.set_allowed_parent!(params['project']['parent_id'])
-      end
+    if service_call.success?
       flash[:notice] = l(:notice_successful_update)
-      OpenProject::Notifications.send('project_updated', project: @altered_project)
     end
 
     redirect_to settings_project_path(@altered_project)
@@ -268,8 +273,6 @@ class ProjectsController < ApplicationController
     @wp_custom_fields = WorkPackageCustomField.order("#{CustomField.table_name}.position")
     @types = ::Type.all
 
-    @project.parent = Project.find(params[:parent_id]) if params[:parent_id]
-    @project.attributes = permitted_params.project if params[:project].present?
   end
 
   protected
